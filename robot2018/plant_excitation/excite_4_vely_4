@@ -1,35 +1,3 @@
-mkdir -p build
-cd build && cmake -GNinja -Wno-dev -DCMAKE_BUILD_TYPE=Debug --target  all  .. && ninja  all
--- Found Qt4: /usr/bin/qmake-qt4 (found version "4.8.7") 
--- Found Qt4: /usr/bin/qmake-qt4 (found version "4.8.7") 
--- Found Qt5: /usr/lib/x86_64-linux-gnu/cmake/Qt5Widgets
--- Found libusb-1.0:
---  - Includes: /usr/include/libusb-1.0
---  - Libraries: /usr/lib/x86_64-linux-gnu/libusb-1.0.so
--- Found Qt5: /usr/lib/x86_64-linux-gnu/cmake/Qt5Widgets
--- Boost version: 1.58.0
--- Found the following Boost libraries:
---   system
--- Configuring done
--- Generating done
--- Build files have been written to: /home/robojackets/robocup-software/build
-[1/8] Automatic moc for target gt robojackets robocup
-[2/8] Automatic moc for target client
-[3/8] Generating git version c++ file
-[4/8] Automatic moc for target rrt-viewer
-[5/8] Automatic moc for target RRT
-[6/8] Automatic moc for target robocup
-[7/8] Automatic moc for target soccer
-[8/8] Automatic moc for target log_viewer
-./run/soccer
-Starting Soccer...
-Running on real hardware
-
-seed d6d1208e0e235969
-Using Logitech Logitech Dual Action game controller as controller # 1
-Initializing embedded python interpreter...
-REFEREE: Command = Halt
-REFEREE: Stage = Normal First Half Prep
 0, 0, 0, 0, 4, 3, 4, 3, 608, -270
 0, 0, 0, 0, 4, 3, 4, 3, 360, -24332
 0, 0, 0, 0, 4, 3, 4, 3, 360, -27658
@@ -609,7 +577,6 @@ REFEREE: Stage = Normal First Half Prep
 0, 0, 0, 0, 4, 3, 4, 3, 360, -8463
 0, 0, 0, 0, 4, 3, 4, 3, 360, -17931
 0, 0, 0, 0, 4, 3, 4, 3, 360, -11793
-Updating field geometry based off of vision packet.
 0, 0, 0, 0, 4, 3, 4, 3, 360, -2830
 0, 0, 0, 0, 4, 3, 4, 3, 360, -17931
 0, 0, 0, 0, 4, 3, 4, 3, 364, 31736
@@ -1723,7 +1690,6 @@ Updating field geometry based off of vision packet.
 0, 0, 0, 0, 4, 3, 4, 3, 360, -14352
 0, 0, 0, 0, 4, 3, 4, 3, 360, -2830
 0, 0, 0, 0, 4, 3, 4, 3, 360, -27658
-REFEREE: Command = Force Start
 0, 0, 0, 0, 4, 3, 4, 3, 360, -17672
 0, 0, 0, 0, -17, -22, 7, 15, 360, -32268
 -7, -11, 1, 1, -23, -31, 8, 18, 360, -15887
@@ -1950,7 +1916,6 @@ REFEREE: Command = Force Start
 -249, -195, 134, 104, -133, -67, 69, 41, 360, -1398
 -261, -178, 135, 82, -123, -69, 76, 49, 360, -14939
 -254, -164, 126, 76, -132, -65, 84, 38, 360, -24258
-REFEREE: Command = Halt
 -267, -150, 142, 71, -126, -61, 82, 26, 360, 24390
 -261, -144, 151, 60, -104, -44, 69, 19, 360, 18213
 -244, -131, 140, 46, -92, -40, 61, 15, 360, -15594
@@ -2019,7 +1984,6 @@ REFEREE: Command = Halt
 0, 0, 0, 0, 4, 3, 4, 3, 360, 4345
 0, 0, 0, 0, 4, 3, 4, 3, 360, 4345
 0, 0, 0, 0, 4, 3, 4, 3, 360, -11793
-REFEREE: Command = Force Start
 0, 0, 0, 0, 4, 3, 4, 3, 360, 5108
 0, 0, 0, 0, 12, -14, -22, -5, 360, -14095
 1, -3, -9, -1, 14, -16, -28, -5, 607, 20900
@@ -2233,7 +2197,6 @@ REFEREE: Command = Force Start
 111, -114, -243, -10, 52, -77, -113, -7, 367, 9288
 91, -131, -225, -18, 45, -85, -107, 21, 360, -10888
 85, -151, -215, 0, 39, -83, -104, 26, 360, -30885
-REFEREE: Command = Halt
 76, -166, -213, 21, 32, -88, -95, 29, 361, -28756
 66, -168, -195, 20, 21, -72, -66, 24, 360, -8907
 54, -154, -188, 20, 16, -63, -60, 22, 360, -11825
@@ -2289,7 +2252,6 @@ REFEREE: Command = Halt
 0, 0, 0, 0, 4, 3, 4, 3, 360, -17931
 0, 0, 0, 0, 4, 3, 4, 3, 360, -24332
 0, 0, 0, 0, 4, 3, 4, 3, 360, -27658
-REFEREE: Command = Force Start
 0, 0, 0, 0, 4, 3, 4, 3, 360, 753
 0, 0, 0, 0, -6, 15, -7, -22, 360, -6927
 0, 2, -2, -10, -7, 18, -8, -29, 400, 22575
@@ -2509,7 +2471,6 @@ REFEREE: Command = Force Start
 -42, 148, -42, -275, -25, 94, -23, -128, 400, -26622
 -21, 138, -50, -231, -21, 90, -28, -141, 360, -51
 -15, 136, -59, -237, -19, 95, -34, -142, 360, 16218
-REFEREE: Command = Halt
 -12, 166, -80, -276, -14, 86, -32, -139, 400, -13722
 -7, 141, -82, -244, -10, 68, -36, -108, 360, 22669
 11, 132, -86, -240, 3, 62, -35, -100, 360, 13507
@@ -2546,7 +2507,6 @@ REFEREE: Command = Halt
 0, 0, 0, 0, 3, 3, 4, 4, 360, -23302
 0, 0, 0, 0, 3, 3, 4, 4, 360, -5635
 0, 0, 0, 0, 3, 3, 4, 4, 360, 20463
-REFEREE: Command = Force Start
 0, 0, 0, 0, 4, 3, 4, 4, 360, 15606
 0, 0, 0, 0, -22, -22, 11, 15, 360, -10245
 -4, -5, 5, 2, -27, -27, 14, 17, 360, -31395
@@ -2757,7 +2717,6 @@ REFEREE: Command = Force Start
 -183, -251, 45, 138, -99, -131, 35, 97, 360, 4662
 -202, -226, 59, 139, -98, -130, 39, 89, 361, 18326
 -209, -240, 67, 145, -102, -130, 45, 82, 360, 2210
-REFEREE: Command = Halt
 -209, -247, 80, 143, -113, -119, 49, 80, 360, 13705
 -239, -270, 98, 146, -85, -99, 44, 60, 407, -22756
 -215, -221, 85, 123, -82, -86, 42, 53, 360, 135
