@@ -33,8 +33,6 @@ syms dPhiDt
 gbR_dot = diff(gbR, 'phi') * dPhiDt;
 
 
-
-
 M = 1/(g*r) * inv(J) * gbR * G;
 M = simplify(M)
 
