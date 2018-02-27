@@ -7,6 +7,7 @@ function [ A, B ] = get_control_matrices(params, phi_val)
     L = params.L;
     J_L = params.J_L;
     J_m = params.J_m;
+    J = params.J;
     n = params.n;
     r = params.r;
     m = params.m;
@@ -25,9 +26,13 @@ function [ A, B ] = get_control_matrices(params, phi_val)
            sin(phi_sym),  cos(phi_sym), 0;
                       0,             0, 1];
 
+    M = [m, 0, 0;
+         0, m, 0;
+         0, 0, J];
+         %0, 0, m];
 
-    Z = (J_m + J_L/(n^2))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*m*gbR*pinv(G.');
-    V = (c_m + (c_L/(n^2)))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*m*diff(gbR, phi_sym)*pinv(G.');
+    Z = (J_m + J_L/(n^2))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*M*gbR*pinv(G.');
+    V = (c_m + (c_L/(n^2)))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*M*diff(gbR, phi_sym)*pinv(G.');
 
     % E = G*w_m_dot + H*w_m
 

@@ -5,6 +5,7 @@ params.thetas = [30, 180 - 30, 180 + 39, 360 - 39]*pi/180.0;
 params.L = 0.0824;
 params.J_L = 2.158e-5;
 params.J_m = 1.35e-5;
+params.J = 0.013;
 params.n = 4.091;
 params.r = 0.0285;
 params.m = 3.678;
