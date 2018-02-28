@@ -9,7 +9,7 @@ params.J = 0.013;
 params.n = 4.091;
 params.r = 0.0285;
 params.m = 3.678;
-params.c_m = .0015;
+params.c_m = 0;
 params.c_L = 0;
 params.k_m = 0.035;
 params.Rt = 0.978;
@@ -53,3 +53,6 @@ plot(vars(:,1));
 plot(x_hist(:,1));
 legend('W1 Act', 'W1 Model');
 
+Q = 2*eye(4);
+R = eye(4);
+[K, S, e] = lqr(A, B, Q, R);
