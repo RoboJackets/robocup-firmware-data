@@ -36,19 +36,24 @@ function [ A, B ] = get_control_matrices(params, phi_val)
 
     % E = G*w_m_dot + H*w_m
 
-    G = (Rt/k_m)*Z;
-    H = (Rt/k_m)*V + EM*eye(4);
+    S = (Rt/k_m)*Z;
+    T = (Rt/k_m)*V + EM*eye(4);
 
-    A_sym = -pinv(G)*H;
-    B_sym = pinv(G);
+    A_sym = -pinv(S)*T;
+    B_sym = pinv(S);
     % phi = phi_val;
     % double(subs(A_sym))
     % double(subs(B_sym))
 
-    x = [0, 0, 0, 0].';
-    u = [1, 2, 1, 1].';
     A = double(subs(A_sym, phi_sym, phi_val));
     B = double(subs(B_sym, phi_sym, phi_val));
+    
+    sys = ss(A, B, eye(4), 0);
+    
+    new_sys = c2d(sys, 1/60)
+    
+    A = new_sys.A;
+    B = new_sys.B;
 end
 
 % x_hist = x.';
