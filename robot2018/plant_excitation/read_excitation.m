@@ -1,4 +1,4 @@
-function [ debug_control_vals ] = read_excitation(filename)
+function [ input_v, wheel_vels ] = read_excitation(filename)
 %READ_EXCITATION Reads cleaned csv of plant excitation data
     
     vals = csvread(filename);
@@ -24,6 +24,7 @@ function [ debug_control_vals ] = read_excitation(filename)
 
     % vals(print_line_num,:)
     
-    debug_control_vals = vals;
+    input_v = vals(:,5:8);
+    wheel_vels = vals(:,1:4);
 end
 
