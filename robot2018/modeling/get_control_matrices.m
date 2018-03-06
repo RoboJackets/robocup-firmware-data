@@ -50,7 +50,7 @@ function [ A, B ] = get_control_matrices(params, phi_val)
     
     sys = ss(A, B, eye(4), 0);
     
-    new_sys = c2d(sys, 1/60)
+    new_sys = c2d(sys, 1/60);
     
     A = new_sys.A;
     B = new_sys.B;
