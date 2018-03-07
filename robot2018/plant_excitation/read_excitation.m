@@ -1,4 +1,4 @@
-function [ input_v, wheel_vels ] = read_excitation(filename)
+function [ t, Ts, input_v, wheel_vels ] = read_excitation(filename)
 %READ_EXCITATION Reads cleaned csv of plant excitation data
     
     vals = csvread(filename);
@@ -26,5 +26,8 @@ function [ input_v, wheel_vels ] = read_excitation(filename)
     
     input_v = vals(:,5:8);
     wheel_vels = vals(:,1:4);
+    
+    Ts = 1/60;
+    t = 0:Ts:(length(input_v)*Ts - Ts);
 end
 

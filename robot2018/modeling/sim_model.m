@@ -2,6 +2,8 @@
 % Model-based PI–fuzzy control of four-wheeled omni-directional mobile robots
 % https://www.sciencedirect.com/science/article/pii/S0921889011001230
 
+addpath('../plant_excitation');
+
 thetas = [30, 180 - 30, 180 + 39, 360 - 39]*pi/180.0;
 L = 0.0824;
 J_L = 2.158e-5;
@@ -54,8 +56,9 @@ sys = ss(A, B, eye(4), 0);
 % Our data samples are taken 1/60th apart, but control is really running
 % at 200Hz+. Do we do the discretization twice, one for sample data and
 % one for actual control on the bots?
-dsys_vis = c2d(sys, 1/60);
-dsys = c2d(sys, 0.005);
+Ts = 1/60;
+dsys = c2d(sys, Ts);
+% dsys = c2d(sys, 0.005);
 
 %% Calculate Optimal Gains Matrix
 
@@ -66,41 +69,16 @@ R = eye(4);
 
 %% Compare Discretized System Model to Actual Response
 
-[input_v, wheel_vels] = read_excitation('excite_1');
+[t, Ts, input_v, wheel_vels] = read_excitation('excite_1');
 
-sim_wheel_vels = zeros(length(input_v), 4);
-sim_wheel_vels(1,:) = [0, 0, 0, 0]; % 0 velocity initial assumption
+sim_wheel_vels = lsim(dsys, input_v, t);
 
-for i=2:length(input_v)
-% Calculate update to state variables
-    input = input_v(i,:);
-    x = sim_wheel_vels(i-1,:)';
-    
-    x = dsys_vis.A*x + dsys_vis.B*input.';
-    sim_wheel_vels(i,:) = x';
+num_wheels = 4;
+for n=1:num_wheels
+    subplot(num_wheels,1,n);
+    title(['W' num2str(n) ': Real vs Sim (rad/sec)']);
+    hold on;
+    plot(wheel_vels(:,n));
+    plot(sim_wheel_vels(:,n));
+    legend('Real', 'Sim');
 end
-
-% subplot(3,1,1);
-title('W1 model vs W1 real (rad/s)');
-hold on;
-plot(wheel_vels(:,1));
-plot(sim_wheel_vels(:,1));
-legend('W1 Act', 'W1 Model');
-
-% We now have wheel velocities that are simulated, compare those the the
-% actual ones sensed through encoders.
-
-% subplot(3,1,2);
-% for i=1:4
-%     hold on;
-%     plot(sim_wheel_vels(:,i));
-% end
-
-% subplot(3,1,3);
-% title('Encoder measurements (rad/s)');
-% hold on;
-% for i=1:4
-%     plot(wheel_vels(:,i));
-% end
-% legend('W1', 'W2', 'W3', 'W4');
-
