@@ -60,13 +60,6 @@ Ts = 1/60;
 dsys = c2d(sys, Ts);
 % dsys = c2d(sys, 0.005);
 
-%% Calculate Optimal Gains Matrix
-
-% Calculate Optimal Gains Matrix
-Q = 2*eye(4);
-R = eye(4);
-[K, S, e] = lqrd(dsys.A, dsys.B, Q, R, dsys.Ts);
-
 %% Compare Discretized System Model to Actual Response
 
 [t, Ts, input_v, wheel_vels] = read_excitation('excite_1');
@@ -82,3 +75,35 @@ for n=1:num_wheels
     plot(sim_wheel_vels(:,n));
     legend('Real', 'Sim');
 end
+
+%% Get System Step Response of LQR Controlled Value
+Q = 2*eye(4);
+R = eye(4);
+[K, S, e] = lqrd(dsys.A, dsys.B, Q, R, dsys.Ts);
+
+% u = K*x;
+% u = K*(x - x_ref)
+
+% x_dot = A*x + B*(K*(x - x_ref))
+% x_dot = A*x + B*K*x - B*K*x_ref))
+
+% x_dot = A*x + B*u;
+% x_dot = (A-B*K)*x + B*r;
+% x_dot = A*x - B*K*x + B*r;
+% x_dot = A*x +B*r - B*K*x;
+
+Ac = dsys.A - K;
+Bc = dsys.B;
+Cc = dsys.C;
+Dc = dsys.D;
+
+sys_cl = ss(Ac, Bc, Cc, Dc, Ts);
+
+t = 0:Ts:1;
+r =0.2*ones([length(t) 4]);
+[y,t,x]=lsim(sys_cl,r,t);
+for n=1:4
+    subplot(4,1,n);
+    plot(t, y(:,n));
+end
+%[AX,H1,H2] = plotyy(t,y(:,1),t,y(:,2),'plot');
