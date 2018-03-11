@@ -84,21 +84,6 @@ R = 2*eye(4);
 
 K = lqr(sys.A,sys.B,Q,R);
 
-for i = 1:4
-    for j = 1:4
-        fprintf('%f', K(1,1))
-        
-        if (~(j == 4 && i == 4))
-            fprintf(', ');
-        end
-    end
-    
-    if (i ~= 4)
-        fprintf('\n');
-    end
-end
-fprintf(';\n');
-
 Ac = [(sys.A-sys.B*K)];
 Bc = [sys.B];
 Cc = [sys.C];
@@ -122,6 +107,21 @@ Ts_c = 1/200;
 dsys_c = c2d(sys, Ts_c);
 
 [K, S, e] = dlqr(dsys_c.A, dsys_c.B, Q, R);
+
+for i = 1:4
+    for j = 1:4
+        fprintf('%f', K(i,j))
+        
+        if (~(j == 4 && i == 4))
+            fprintf(', ');
+        end
+    end
+    
+    if (i ~= 4)
+        fprintf('\n');
+    end
+end
+fprintf(';\n');
 
 sys_cl = ss(Ac, Bc, Cc, Dc, Ts_c);
 
