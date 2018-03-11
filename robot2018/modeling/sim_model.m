@@ -61,49 +61,75 @@ dsys = c2d(sys, Ts);
 % dsys = c2d(sys, 0.005);
 
 %% Compare Discretized System Model to Actual Response
+% 
+% [t, Ts, input_v, wheel_vels] = read_excitation('excite_1');
+% 
+% sim_wheel_vels = lsim(dsys, input_v, t);
+% 
+% num_wheels = 4;
+% for n=1:num_wheels
+%     subplot(num_wheels,1,n);
+%     title(['W' num2str(n) ': Real vs Sim (rad/sec)']);
+%     hold on;
+%     plot(wheel_vels(:,n));
+%     plot(sim_wheel_vels(:,n));
+%     legend('Real', 'Sim');
+% end
 
-[t, Ts, input_v, wheel_vels] = read_excitation('excite_1');
+%% Continuous Time LQR Step Response Graph
 
-sim_wheel_vels = lsim(dsys, input_v, t);
 
-num_wheels = 4;
-for n=1:num_wheels
-    subplot(num_wheels,1,n);
-    title(['W' num2str(n) ': Real vs Sim (rad/sec)']);
-    hold on;
-    plot(wheel_vels(:,n));
-    plot(sim_wheel_vels(:,n));
-    legend('Real', 'Sim');
-end
+Q = 1*eye(4);
+R = 2*eye(4);
+
+K = lqr(sys.A,sys.B,Q,R);
+
+Ac = [(sys.A-sys.B*K)];
+Bc = [sys.B];
+Cc = [sys.C];
+Dc = [sys.D];
+
+sys_cl = ss(Ac,Bc,Cc,Dc);
+
+t = 0:0.0001:1/100;
+r = 2*ones(length(t),4);
+lsim(sys_cl,r,t);
+%[AX,H1,H2] = plotyy(t,y(:,1),t,y(:,2),'plot');
+%title('Step Response with LQR Control')
+
 
 %% Get System Step Response of LQR Controlled Value
 Q = 2*eye(4);
 R = eye(4);
-[K, S, e] = lqrd(dsys.A, dsys.B, Q, R, dsys.Ts);
 
-% u = K*x;
-% u = K*(x - x_ref)
+Ts_c = 1/200;
+% dsys_c = ss(sys.A, sys.B, sys.C, sys.D, Ts_c);
+dsys_c = c2d(sys, Ts_c);
 
-% x_dot = A*x + B*(K*(x - x_ref))
-% x_dot = A*x + B*K*x - B*K*x_ref))
+[K, S, e] = dlqr(dsys_c.A, dsys_c.B, Q, R);
 
-% x_dot = A*x + B*u;
-% x_dot = (A-B*K)*x + B*r;
-% x_dot = A*x - B*K*x + B*r;
-% x_dot = A*x +B*r - B*K*x;
+sys_cl = ss(Ac, Bc, Cc, Dc, Ts_c);
 
-Ac = dsys.A - K;
-Bc = dsys.B;
-Cc = dsys.C;
-Dc = dsys.D;
+t = 0:Ts_c:1;
+r = ones([length(t) 4]);
 
-sys_cl = ss(Ac, Bc, Cc, Dc, Ts);
+r(:,2:4) = 0*r(:,2:4);
 
-t = 0:Ts:1;
-r =0.2*ones([length(t) 4]);
-[y,t,x]=lsim(sys_cl,r,t);
-for n=1:4
-    subplot(4,1,n);
-    plot(t, y(:,n));
+xs = [0 0 0 0];
+for i=2:100
+    xs(i,:) = dsys_c.A*xs(i-1,:)' + dsys_c.B*K*[1 -.8 .8 -1]';
 end
+
+for i=1:4
+    hold on;
+    subplot(4,1,i);
+    plot(xs(:,i));
+end
+
+% r(:,2) = -r(:,2);
+% [y,t,x]=lsim(sys_cl,r,t);
+% for n=1:4
+%     subplot(4,1,n);
+%     plot(t, y(:,n));
+% end
 %[AX,H1,H2] = plotyy(t,y(:,1),t,y(:,2),'plot');
