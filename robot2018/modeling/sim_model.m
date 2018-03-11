@@ -84,6 +84,21 @@ R = 2*eye(4);
 
 K = lqr(sys.A,sys.B,Q,R);
 
+for i = 1:4
+    for j = 1:4
+        fprintf('%f', K(1,1))
+        
+        if (~(j == 4 && i == 4))
+            fprintf(', ');
+        end
+    end
+    
+    if (i ~= 4)
+        fprintf('\n');
+    end
+end
+fprintf(';\n');
+
 Ac = [(sys.A-sys.B*K)];
 Bc = [sys.B];
 Cc = [sys.C];
