@@ -49,6 +49,9 @@ B = double(subs(B_sym, phi_sym, 0));
 C = eye(4,4);
 D = zeros(4,4);
 
+wvR = pinv(G.')*r;
+
+% Q/R for the integral state space
 Q = [  eye(4,4)/100^2, zeros(4,4);
      zeros(4,4), eye(4,4)*100^2];
 R = eye(4,4)*2;
@@ -57,9 +60,43 @@ s = ss(A, B, C, D);
 
 [K, ~, e] = lqi(s, Q, R);
 
+% Q/R for just simple state feedback (-Kx)
 Q2 = eye(4,4);
 R2 = eye(4,4)*2;
 [K2, ~, e2] = lqr(s, Q2, R2);
 
 BotToWheel = G' / r;
 WheelToBot = pinv(BotToWheel);
+
+% Camera delay and our "delay" constant for the smith predictor
+delay = 100;
+delay_est = delay * 1;
+
+% PID Constants
+% Translational (t) / Rotation (w)
+tp = 0;
+ti = 0;
+td = 0;
+wp = 0;
+wi = 0;
+wd = 0;
+
+%%%% Descrete model constants %%%%
+
+% Camera
+delay_sample = 0;
+camera_noise = 0.00001;
+camera_ts = 0.1;
+
+% Radio
+buffer_size = 1;
+encoder_ts = 0.1;
+
+% Kalman filter
+F_k; % A
+B_k; % B
+H_k; % C
+Q_k; % Covariance of process noise
+R_k; % Covariance of observation noise
+I = eye(6,6);
+
