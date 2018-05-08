@@ -85,18 +85,50 @@ wd = 0;
 
 % Camera
 delay_sample = 0;
-camera_noise = 0.00001;
-camera_ts = 0.1;
+camera_noise = 0.000001;
+camera_ts = 0.01;
 
 % Radio
 buffer_size = 1;
-encoder_ts = 0.1;
+encoder_ts = 0.01;
+
+% Check this
+K2 = K(1:4, 5:8);
+K1 = K(1:4, 1:4);
+
+% See word doc for this
+Ao = [zeros(3,3), gbR*pinv(G')*r/n, zeros(3,4), zeros(3,4);
+      zeros(4,3),           A-B*K1,      -B*K2,      -B*K1;
+      zeros(4,3),                C, zeros(4,4), zeros(4,4);
+      zeros(4,3),       zeros(4,4), zeros(4,4),      A-L*C];
+Ao = double(subs(Ao, phi_sym, 0));
+
+E2 = eye(3,3);
+E1 = eye(4,4);
+
+Bo = [        E2, zeros(3,4), zeros(3,4), zeros(3,4);
+      zeros(4,3), zeros(4,4),         E1, zeros(4,4);
+      zeros(4,3),  -eye(4,4), zeros(4,4),   eye(4,4);
+      zeros(4,3), zeros(4,4),        -E1, eye(4,4)*L];
+
+Co = [  eye(3,3), zeros(3,4), zeros(3,4), zeros(3,4);
+      zeros(4,3),          C, zeros(4,4), zeros(4,4)];
+  
+Do = [1, 0, 0, 0;
+      0, 0, 0, 0];
+Do = zeros(7,15);
+  
+
+ssi = ss(Ao(4:end, 4:end), Bo(4:end, 4:end), Co(4:end, 4:end), Do(4:end, 4:end));
+sso = ss(Ao, Bo, Co, Do);
+ssod = c2d(sso, encoder_ts);
 
 % Kalman filter
-F_k; % A
-B_k; % B
-H_k; % C
-Q_k; % Covariance of process noise
-R_k; % Covariance of observation noise
-I = eye(6,6);
+F_k = ssod.A; % A
+B_k = ssod.B; % B
+H_k = ssod.C; % C
+Q_k = eye(15, 15); % Covariance of process noise
+R_k = [eye(3, 3)*1000, zeros(3, 4);
+       zeros(4,3), eye(4, 4)*0.001]; % Variance of observation noise
+
 
