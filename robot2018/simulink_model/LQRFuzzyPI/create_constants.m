@@ -1,3 +1,4 @@
+%% Constants
 X_0 = [0, 0, 0, 0];
 
 thetas = [30, 180 - 30, 180 + 39, 360 - 39]*pi/180.0;
@@ -19,6 +20,8 @@ w_n = 1/10;
 rpm_to_rad_p_sec = 2*pi / 60;
 EM = 1/(285 * rpm_to_rad_p_sec); % V/RPM, converted to SI units
 
+
+%% State Space Matrices / Kinematic Translations
 G = [-sin(thetas(1)), -sin(thetas(2)), -sin(thetas(3)), -sin(thetas(4));
     cos(thetas(1)),  cos(thetas(2)),  cos(thetas(3)),  cos(thetas(4));
     L,            L,            L,           L];
@@ -51,28 +54,32 @@ D = zeros(4,4);
 
 wvR = pinv(G.')*r;
 
-% Q/R for the integral state space
-Q = [  eye(4,4)/100^2, zeros(4,4);
-     zeros(4,4), eye(4,4)*100^2];
-R = eye(4,4)*2;
-
-s = ss(A, B, C, D);
-
-[K, ~, e] = lqi(s, Q, R);
-
-% Q/R for just simple state feedback (-Kx)
-Q2 = eye(4,4);
-R2 = eye(4,4)*2;
-[K2, ~, e2] = lqr(s, Q2, R2);
-
 BotToWheel = G' / r;
 WheelToBot = pinv(BotToWheel);
 
-% Camera delay and our "delay" constant for the smith predictor
+%% State Space Integral Gains
+% Q/R for the integral state space
+Q_int = [  eye(4,4)/10^2, zeros(4,4);
+     zeros(4,4), eye(4,4)*10^2];
+R_int = eye(4,4)*5;
+
+s = ss(A, B, C, D);
+s = c2d(s, 1/200);
+[K_int, ~, e_int] = lqi(s, Q_int, R_int);
+
+%% State Feedback Gains
+% Q/R for just simple state feedback (-Kx)
+Q_fb = eye(4,4);
+R_fb = eye(4,4)*2;
+[K_fb, ~, e_fb] = lqr(s, Q_fb, R_fb);
+
+
+%% Camera Delay Properties for Smith Predictor
+% Camera delay and our estimated delay
 delay = 100;
 delay_est = delay * 1;
 
-% PID Constants
+%% PID Constants
 % Translational (t) / Rotation (w)
 tp = 0;
 ti = 0;
@@ -81,20 +88,20 @@ wp = 0;
 wi = 0;
 wd = 0;
 
-%%%% Descrete model constants %%%%
+%% Descrete Time Model
 
-% Camera
+% Camera Properties
 delay_sample = 0;
 camera_noise = 0.000001;
 camera_ts = 0.01;
 
-% Radio
+% Encoder Buffer / Resolution
 buffer_size = 1;
 encoder_ts = 0.01;
 
 % Check this
-K2 = K(1:4, 5:8);
-K1 = K(1:4, 1:4);
+K2 = K_int(1:4, 5:8);
+K1 = K_int(1:4, 1:4);
 
 % See word doc for this
 Ao = [zeros(3,3), gbR*pinv(G')*r/n, zeros(3,4), zeros(3,4);
@@ -123,12 +130,11 @@ ssi = ss(Ao(4:end, 4:end), Bo(4:end, 4:end), Co(4:end, 4:end), Do(4:end, 4:end))
 sso = ss(Ao, Bo, Co, Do);
 ssod = c2d(sso, encoder_ts);
 
-% Kalman filter
+%% Kalman Filter
 F_k = ssod.A; % A
 B_k = ssod.B; % B
 H_k = ssod.C; % C
 Q_k = eye(15, 15); % Covariance of process noise
 R_k = [eye(3, 3)*1000, zeros(3, 4);
        zeros(4,3), eye(4, 4)*0.001]; % Variance of observation noise
-
 
