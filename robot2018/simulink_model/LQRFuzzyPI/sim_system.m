@@ -13,7 +13,7 @@ t_continous_period = 0.0001;
 t_robot_period     = 1 / 200.0; % Control loop on robot
 t_soccer_period    = 1 / 60.0;  % Control loop in soccer
 
-t_max = 10;
+t_max = 5;
 
 time = 0:t_continous_period:t_max;
 
@@ -39,8 +39,8 @@ EM = 1/(285 * rpm_to_rad_p_sec); % V/RPM, converted to SI units
 
 %% Kinematic Transformation
 G = [-sin(thetas(1)), -sin(thetas(2)), -sin(thetas(3)), -sin(thetas(4));
-    cos(thetas(1)),  cos(thetas(2)),  cos(thetas(3)),  cos(thetas(4));
-    L,            L,            L,           L];
+      cos(thetas(1)),  cos(thetas(2)),  cos(thetas(3)),  cos(thetas(4));
+                   L,            L,            L,           L];
 
 phi_sym = sym('phi');
 
@@ -58,7 +58,7 @@ V = (c_m + (c_L/(n^2)))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*M*diff(gbR, phi_sym
 S = (Rt/k_m)*Z;
 T = (Rt/k_m)*V + EM*eye(4);
 
-BotToWheel = G' / r;
+BotToWheel = G' / r / n;
 WheelToBot = pinv(BotToWheel);
 
 %% State Space Modeling
@@ -140,8 +140,8 @@ H_k_both = dfull_ss_both.C; % C
 H_k_enco = dfull_ss_enco.C;
 Q_k = eye(11, 11); % Covariance of process noise
 R_k_both = [eye(3, 3)*sqrt(.01), zeros(3, 4);
-            zeros(4,3), eye(4, 4)]; % Variance of observation noise
-R_k_enco = eye(4, 4)*.001;
+            zeros(4,3), eye(4, 4)*.0001]; % Variance of observation noise
+R_k_enco = eye(4, 4)*.0001;
 
 %% Prealloc
 % Robot wheel speed controller
@@ -182,6 +182,7 @@ full_u            = zeros( 3, 1 );              % Commanded vel in global frame
 camera_y          = start_pos;                  % Current camera reading of pos
 encoder_y         = zeros( 4, 1 );              % Current encoder reading of wheel vel
 
+prev_omega = 0;  % Holds the rotation velocity for full nonlinear plant simulation
 e = zeros(3, 1); % Position pid error
 
 camera_frame_delay = 10; % Number of frames the camera lags behind
@@ -192,7 +193,7 @@ heading_buffer = zeros( 1, camera_frame_delay ); % Past history of the angle
 
 prev_y = start_pos;
 
-for n = 0:length(time)-1
+for t = 0:length(time)-1
     %% Compute Controller Output
     
     % Simple rotation needed to convert world -> robot coordinates
@@ -206,7 +207,7 @@ for n = 0:length(time)-1
                                      0,                   0, 1];
     
     % Soccer controller update
-    if mod(n*t_continous_period, t_soccer_period) < t_continous_period*.999
+    if mod(t*t_continous_period, t_soccer_period) < t_continous_period*.999
         %% Get sensor output
         camera_y    = full_x_plant(1:3) + randn(3,1)*0.01;
         encoder_y   = robot_y;
@@ -315,10 +316,10 @@ for n = 0:length(time)-1
         
         %% Update Output vel
         y = zeros(3,1);
-        target = start_pos + [5;0;0.5];
+        target = start_pos + [5;-1;1];
         start = start_pos;
         
-        t_current = n*t_continous_period;
+        t_current = t*t_continous_period;
         t_start = 0;
         
         for i = 1:3
@@ -372,7 +373,7 @@ for n = 0:length(time)-1
     end
     
     % Robot controller update
-    if mod(n*t_continous_period, t_robot_period) < t_continous_period*.999
+    if mod(t*t_continous_period, t_robot_period) < t_continous_period*.999
         %% Get sensor output
         encoder_tick_per_rev = 1000;
         robot_y = 1 ./ encoder_tick_per_rev .* round(robot_x_plant * encoder_tick_per_rev);
@@ -394,28 +395,42 @@ for n = 0:length(time)-1
     
     %% Store all the results
     % Robot wheel speed controller
-    robot_X_plant(:, n+1) = robot_x_plant; % Real wheel vels
-    robot_X_hat(:, n+1)   = robot_x_hat; % Current estimated wheel vels
-    robot_U(:, n+1)       = robot_u; % Input voltage
-    robot_Y(:, n+1)       = robot_y; % Same as x
-    robot_SIGMA(:, n+1)   = robot_sigma; % Error integrator
-    robot_BDY_VEL(:, n+1) = WheelToBot * robot_x_plant; % Body Velocity
+    robot_X_plant(:, t+1) = robot_x_plant; % Real wheel vels
+    robot_X_hat(:, t+1)   = robot_x_hat; % Current estimated wheel vels
+    robot_U(:, t+1)       = robot_u; % Input voltage
+    robot_Y(:, t+1)       = robot_y; % Same as x
+    robot_SIGMA(:, t+1)   = robot_sigma; % Error integrator
+    robot_BDY_VEL(:, t+1) = WheelToBot * robot_x_plant; % Body Velocity
 
     % Position controller
-    full_X_plant(:, n+1) = full_x_plant;
-    full_X_hat(:, n+1)   = full_x_hat; % Estimated state vector
-    full_U(:, n+1)       = rotation_real*full_u;  % Input velocity target
-    camera_Y(:, n+1)     = camera_y;  % Camera output
-    encoder_Y(:, n+1)    = encoder_y;  % Encoder output
+    full_X_plant(:, t+1) = full_x_plant;
+    full_X_hat(:, t+1)   = full_x_hat; % Estimated state vector
+    full_U(:, t+1)       = rotation_real*full_u;  % Input velocity target
+    camera_Y(:, t+1)     = camera_y;  % Camera output
+    encoder_Y(:, t+1)    = encoder_y;  % Encoder output
     
-    E(:, n+1) = e;
-    TARGET(:, n+1) = prev_y;
+    E(:, t+1) = e;
+    TARGET(:, t+1) = prev_y;
     
-    %% Plant Physics
-    %body_vel = WheelToBot * robot_x_plant;
-    A_cont = A;%double(subs(A_sym, phi_sym, body_vel(3)));
-    B_cont = B;%double(subs(B_sym, phi_sym, body_vel(3)));
-    robot_x_plant = robot_x_plant + t_continous_period*(A_cont * robot_x_plant + B_cont * robot_u);
+    %% Plant Physics    
+    % Simulate full nonlinear robot system
+    gbRr = [cos(full_x_plant(3)), -sin(full_x_plant(3)), 0;
+            sin(full_x_plant(3)),  cos(full_x_plant(3)), 0;
+                               0,                     0, 1];
+	gbRrd = [-sin(prev_omega), -cos(prev_omega), 0;
+              cos(prev_omega), -sin(prev_omega), 0;
+                            0,                0, 0];
+	
+    Z = (J_m + J_L/(n^2))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbRr.'*M*gbRr*pinv(G.');
+    V = (c_m + (c_L/(n^2)))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbRr.'*M*gbRrd*pinv(G.');
+
+    S = (Rt/k_m)*Z;
+    T = (Rt/k_m)*V + EM*eye(4);
+
+    vel = -pinv(S)*T * robot_x_plant + pinv(S) * robot_u;
+    prev_omega = WheelToBot(3,:)*vel;
+    
+    robot_x_plant = robot_x_plant + t_continous_period*(vel);
     
     % Calculate new position
     full_x_plant(1:3) = full_x_plant(1:3) + t_continous_period * rotation_real' * WheelToBot * robot_x_plant;
