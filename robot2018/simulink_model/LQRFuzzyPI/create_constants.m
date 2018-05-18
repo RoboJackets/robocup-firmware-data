@@ -64,8 +64,9 @@ Q_int = [  eye(4,4)/10^2, zeros(4,4);
 R_int = eye(4,4)*5;
 
 s = ss(A, B, C, D);
-s = c2d(s, 1/200);
 [K_int, ~, e_int] = lqi(s, Q_int, R_int);
+so = c2d(s, 1/200);
+[K_int_d, ~, e_int_d] = lqi(so, Q_int, R_int);
 
 %% State Feedback Gains
 % Q/R for just simple state feedback (-Kx)
@@ -99,42 +100,46 @@ camera_ts = 0.01;
 buffer_size = 1;
 encoder_ts = 0.01;
 
-% Check this
-K2 = K_int(1:4, 5:8);
-K1 = K_int(1:4, 1:4);
+
+K2 = K_int(:, 5:8);
+K1 = K_int(:, 1:4);
 
 % See word doc for this
-Ao = [zeros(3,3), gbR*pinv(G')*r/n, zeros(3,4), zeros(3,4);
-      zeros(4,3),           A-B*K1,      -B*K2,      -B*K1;
-      zeros(4,3),                C, zeros(4,4), zeros(4,4);
-      zeros(4,3),       zeros(4,4), zeros(4,4),      A-L*C];
+Ao = [zeros(3,3), gbR*pinv(G')*r/n, zeros(3,4);
+      zeros(4,3),           A-B*K1,      -B*K2;
+      zeros(4,3),                C, zeros(4,4)];
 Ao = double(subs(Ao, phi_sym, 0));
 
-E2 = eye(3,3);
-E1 = eye(4,4);
+E2 = zeros(3,3);
+E1 = zeros(4,4);
 
-Bo = [        E2, zeros(3,4), zeros(3,4), zeros(3,4);
-      zeros(4,3), zeros(4,4),         E1, zeros(4,4);
-      zeros(4,3),  -eye(4,4), zeros(4,4),   eye(4,4);
-      zeros(4,3), zeros(4,4),        -E1, eye(4,4)*L];
-
-Co = [  eye(3,3), zeros(3,4), zeros(3,4), zeros(3,4);
-      zeros(4,3),          C, zeros(4,4), zeros(4,4)];
+Bo = [        E2, zeros(3,4), zeros(3,4);
+      zeros(4,3), zeros(4,4),         E1;
+      zeros(4,3),  -eye(4,4), zeros(4,4)];
   
-Do = [1, 0, 0, 0;
-      0, 0, 0, 0];
-Do = zeros(7,15);
+  
+Co_both = [  eye(3,3), zeros(3,4), zeros(3,4);
+           zeros(4,3),          C, zeros(4,4)];
+
+Co_enco = [zeros(4,3),          C, zeros(4,4)];
+       
+Do_both = zeros(7,11);
+Do_enco = zeros(4,11);
   
 
-ssi = ss(Ao(4:end, 4:end), Bo(4:end, 4:end), Co(4:end, 4:end), Do(4:end, 4:end));
-sso = ss(Ao, Bo, Co, Do);
-ssod = c2d(sso, encoder_ts);
+%ssi = ss(Ao(4:end, 4:end), Bo(4:end, 4:end), Co(4:end, 4:end), Do(4:end, 4:end));
+ssa = ss(Ao, Bo, Co_both, Do_both);
+ssb = ss(Ao, Bo, Co_enco, Do_enco);
+ssad = c2d(ssa, encoder_ts);
+ssbd = c2d(ssb, encoder_ts);
 
 %% Kalman Filter
-F_k = ssod.A; % A
-B_k = ssod.B; % B
-H_k = ssod.C; % C
-Q_k = eye(15, 15); % Covariance of process noise
-R_k = [eye(3, 3)*1000, zeros(3, 4);
-       zeros(4,3), eye(4, 4)*0.001]; % Variance of observation noise
+F_k = ssad.A; % A
+B_k = ssad.B; % B
+H_k_both = ssad.C; % C
+H_k_enco = ssbd.C;
+Q_k = eye(11, 11); % Covariance of process noise
+R_k_both = [eye(3, 3), zeros(3, 4);
+            zeros(4,3), eye(4, 4)]; % Variance of observation noise
+R_k_enco = eye(4, 4);
 
