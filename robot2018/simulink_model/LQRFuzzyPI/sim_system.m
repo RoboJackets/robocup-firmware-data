@@ -101,7 +101,7 @@ K1 = K_int(:, 1:4);
 % See word doc for this
 % The rotation can be taken out and applied after the fact
 % This is so we don't have to descretize a highly nonlinear system
-Ao = [zeros(3,3), pinv(G')*r/n, zeros(3,4); %gbR*pinv(G')*r/n
+Ao = [zeros(3,3), WheelToBot, zeros(3,4); %gbR*pinv(G')*r/n
       zeros(4,3),       A-B*K1,      -B*K2;
       zeros(4,3),            C, zeros(4,4)];
 
