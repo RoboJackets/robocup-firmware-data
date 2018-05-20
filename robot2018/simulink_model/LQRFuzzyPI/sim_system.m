@@ -40,7 +40,7 @@ EM = 1/(285 * rpm_to_rad_p_sec); % V/RPM, converted to SI units
 %% Kinematic Transformation
 G = [-sin(thetas(1)), -sin(thetas(2)), -sin(thetas(3)), -sin(thetas(4));
       cos(thetas(1)),  cos(thetas(2)),  cos(thetas(3)),  cos(thetas(4));
-                   L,            L,            L,           L];
+                   L,               L,               L,               L];
 
 phi_sym = sym('phi');
 
@@ -101,9 +101,9 @@ K1 = K_int(:, 1:4);
 % See word doc for this
 % The rotation can be taken out and applied after the fact
 % This is so we don't have to descretize a highly nonlinear system
-Ao = [zeros(3,3), WheelToBot, zeros(3,4); %gbR*pinv(G')*r/n
-      zeros(4,3),       A-B*K1,      -B*K2;
-      zeros(4,3),            C, zeros(4,4)];
+Ao = [zeros(3,3), WheelToBot, zeros(3,4);
+      zeros(4,3),     A-B*K1,      -B*K2;
+      zeros(4,3),          C, zeros(4,4)];
 
 % Noise matrices (Unused)
 E2 = zeros(3,3);
@@ -480,3 +480,4 @@ f = figure(6);
 f.Name = 'Position Error';
 plot(time, E);
 legend('X', 'Y', '\theta');
+title('Position Error');
