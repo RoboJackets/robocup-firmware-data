@@ -1,5 +1,10 @@
 %% Uses a log file to estimate position using our kalman filter
 
+%% Time Grid
+t_soccer_period    = 1 / 60.0;  % Control loop in soccer
+
+time = (0:length(data_bot_id)-1) * t_soccer_period;
+
 %% Read data from file
 % Ignore first line due to title and the second line since there are some
 % extra data
@@ -8,22 +13,16 @@ data = dlmread('../../vision-enc-data/enc_vis.txt', ' ', 2, 0);
 data_bot_id = data(:, 1);
 data_camera_pos = data(:, 2:4);
 data_camera_pos(:, 1:2) = data_camera_pos(:, 1:2) / 1000;  % Convert to meters
-data_encoder_output = data(:, 5:8) * (1 / 18.432) * 2 * 64 / 1000;
-
-
-%% Time Grid
-t_soccer_period    = 1 / 60.0;  % Control loop in soccer
-
-time = 0:length(data_bot_id)-1 * t_soccer_period;
+data_encoder_output = data(:, 5:8) * 2*pi / t_soccer_period / (2048 * 3); % Convert from lsb/ts in hz to rad/s
 
 %% Robot Constants
-thetas = [30, 180 - 30, 180 + 39, 360 - 39]*pi/180.0;
-L = 0.0824;
+thetas = [180 - 30, 180 + 39, 0 - 39, 0 + 30]*pi/180.0 - pi/2;
+L = 0.0798576;
 J_L = 2.158e-5;
 J_m = 1.35e-5;
 J = 0.013;
-n = 4.091;
-r = 0.0285;
+n = 3;
+r = 0.02768;
 m = 3.678;
 c_m = .0001;
 c_L = 0.007;
@@ -56,7 +55,7 @@ V = (c_m + (c_L/(n^2)))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*M*diff(gbR, phi_sym
 S = (Rt/k_m)*Z;
 T = (Rt/k_m)*V + EM*eye(4);
 
-BotToWheel = G' / r / n;
+BotToWheel = -1 .* G' / r;
 WheelToBot = pinv(BotToWheel);
 
 %% State Space Modeling
@@ -76,13 +75,11 @@ R_int = eye(4,4)*5;
 
 robot_ss = ss(A, B, C, D);
 [K_int, ~, e_int] = lqi(robot_ss, Q_int, R_int);
-drobot_ss = c2d(robot_ss, 1/200);
-[K_int_d, ~, e_int_d] = lqi(drobot_ss, Q_int, R_int);
 
 %% Full State Space Modelling
 % This is from the point of view of soccer viewing the robot as the plant
-K2 = K_int(:, 5:8);
-K1 = K_int(:, 1:4);
+K2 = K_int(:, 5:8)*0;
+K1 = K_int(:, 1:4)*0;
 
 % See word doc for this
 % The rotation can be taken out and applied after the fact
@@ -125,7 +122,7 @@ B_k = dfull_ss_both.B; % B
 H_k_both = dfull_ss_both.C; % C
 H_k_enco = dfull_ss_enco.C;
 Q_k = eye(11, 11); % Covariance of process noise
-R_k_both = [eye(3, 3)*sqrt(.01), zeros(3, 4);
+R_k_both = [eye(3, 3)*sqrt(.001), zeros(3, 4);
             zeros(4,3), eye(4, 4)*.0001]; % Variance of observation noise
 R_k_enco = eye(4, 4)*.0001;
 
@@ -144,8 +141,7 @@ full_p_camera     = zeros( 11, 11 );            % Covariance at last camera upda
 camera_y          = start_pos;                  % Current camera reading of pos
 encoder_y         = zeros( 4, 1 );              % Current encoder reading of wheel vel
 
-camera_frame_delay = 10; % Number of frames the camera lags behind
-camera_buffer  = repmat( start_pos, 1, camera_frame_delay ); % Delays samples for camera (Not needed in real code)
+camera_frame_delay = 5; % Number of frames the camera lags behind
 encoder_buffer = zeros( 4, camera_frame_delay ); % Past encoder samples before current camera data comes in
 u_buffer       = zeros( 3, camera_frame_delay ); % Past wheel output before current camera data comes in
 heading_buffer = zeros( 1, camera_frame_delay ); % Past history of the angle
@@ -160,21 +156,19 @@ for t = 0:length(data_bot_id)-1
     %% Get sensor output
     camera_y    = data_camera_pos(t + 1, :)';
     encoder_y   = data_encoder_output(t + 1, :)';
-    commanded_u = zeros(3, 1); % Assume 0 input for now until we get around to recording this
+    commanded_u = zeros(3, 1); %rotation_hat * WheelToBot * encoder_y; % Assume 0 input for now until we get around to recording this
 
     %% Update Kalman Filter Using Both Camera and Encoder
     % Push current values onto end of queue
-    camera_buffer  = [camera_buffer, camera_y]; % (Not need irl)
     encoder_buffer = [encoder_buffer, encoder_y];
     u_buffer       = [u_buffer, commanded_u];
     heading_buffer = [heading_buffer, full_x_hat(3)];
 
     % Remove oldest value from queue
-    camera_cur  = camera_buffer(:, 1);
+    camera_cur  = camera_y;
     wheel_cur   = encoder_buffer(:, 1);
     u_cur       = u_buffer(:, 1);
     heading_cur = heading_buffer(1);
-    camera_buffer(:, 1)  = [];
     encoder_buffer(:, 1) = [];
     u_buffer(:, 1)       = [];
     heading_buffer(1) = [];
@@ -244,7 +238,7 @@ for t = 0:length(data_bot_id)-1
         % Predict where we should be this time step
         x_hat_k_k1 = F_k_rot * x_hat_k1_k1 + B_k * full_u_kalman;
         P_k_k1 = F_k_rot * p_k1_k1 * F_k_rot' + Q_k;
-
+        
         % Get error between predicted and actual
         y_tilda_k = z_k - H_k_enco * x_hat_k_k1;
         S_k = R_k_enco + H_k_enco * P_k_k1 * H_k_enco';
@@ -291,3 +285,7 @@ subplot(312), plot(time, [camera_Y(2,:); full_X_hat(2,:)]), xlabel('t [s]'), yla
 legend('Real', 'Estimated');
 subplot(313), plot(time, [camera_Y(3,:); full_X_hat(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
 legend('Real', 'Estimated');
+
+f = figure(6);
+f.Name =  'Full Camera Readings';
+plot(time, full_X_hat(4:end, :)), xlabel('t [s]'), ylabel('x(t) [m]');

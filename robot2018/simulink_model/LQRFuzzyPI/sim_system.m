@@ -406,7 +406,7 @@ for t = 0:length(time)-1
     full_X_plant(:, t+1) = full_x_plant;
     full_X_hat(:, t+1)   = full_x_hat; % Estimated state vector
     full_U(:, t+1)       = rotation_real*full_u;  % Input velocity target
-    camera_Y(:, t+1)     = camera_y;  % Camera output
+    camera_Y(:, t+1)     = camera_cur;  % Camera output
     encoder_Y(:, t+1)    = encoder_y;  % Encoder output
     
     E(:, t+1) = e;
@@ -469,12 +469,12 @@ subplot(313), plot(time, camera_Y(3,:)), xlabel('t [s]'), ylabel('\theta(t) [rad
 
 f = figure(5);
 f.Name = 'Full Position Compared (Real Pos, Estimated, Target)';
-subplot(311), plot(time, [full_X_plant(1,:); full_X_hat(1,:); TARGET(1,:)]), xlabel('t [s]'), ylabel('x(t) [m]');
-legend('Real', 'Estimated', 'Target');
-subplot(312), plot(time, [full_X_plant(2,:); full_X_hat(2,:); TARGET(2,:)]), xlabel('t [s]'), ylabel('y(t) [m]');
-legend('Real', 'Estimated', 'Target');
-subplot(313), plot(time, [full_X_plant(3,:); full_X_hat(3,:); TARGET(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
-legend('Real', 'Estimated', 'Target');
+subplot(311), plot(time, [full_X_plant(1,:); full_X_hat(1,:); TARGET(1,:); camera_Y(1,:)]), xlabel('t [s]'), ylabel('x(t) [m]');
+legend('Real', 'Estimated', 'Target', 'Camera');
+subplot(312), plot(time, [full_X_plant(2,:); full_X_hat(2,:); TARGET(2,:); camera_Y(2,:)]), xlabel('t [s]'), ylabel('y(t) [m]');
+legend('Real', 'Estimated', 'Target', 'Camera');
+subplot(313), plot(time, [full_X_plant(3,:); full_X_hat(3,:); TARGET(3,:); camera_Y(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
+legend('Real', 'Estimated', 'Target', 'Camera');
 
 f = figure(6);
 f.Name = 'Position Error';
