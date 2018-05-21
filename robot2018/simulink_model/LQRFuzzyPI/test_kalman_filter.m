@@ -1,9 +1,7 @@
 %% Uses a log file to estimate position using our kalman filter
 
-%% Time Grid
 t_soccer_period    = 1 / 60.0;  % Control loop in soccer
 
-time = (0:length(data_bot_id)-1) * t_soccer_period;
 
 %% Read data from file
 % Ignore first line due to title and the second line since there are some
@@ -14,6 +12,11 @@ data_bot_id = data(:, 1);
 data_camera_pos = data(:, 2:4);
 data_camera_pos(:, 1:2) = data_camera_pos(:, 1:2) / 1000;  % Convert to meters
 data_encoder_output = data(:, 5:8) * 2*pi / t_soccer_period / (2048 * 3); % Convert from lsb/ts in hz to rad/s
+
+
+%% Time Grid
+time = (0:length(data_bot_id)-1) * t_soccer_period;
+
 
 %% Robot Constants
 thetas = [180 - 30, 180 + 39, 0 - 39, 0 + 30]*pi/180.0 - pi/2;
@@ -156,7 +159,7 @@ for t = 0:length(data_bot_id)-1
     %% Get sensor output
     camera_y    = data_camera_pos(t + 1, :)';
     encoder_y   = data_encoder_output(t + 1, :)';
-    commanded_u = zeros(3, 1); %rotation_hat * WheelToBot * encoder_y; % Assume 0 input for now until we get around to recording this
+    commanded_u = rotation_hat * WheelToBot * encoder_y; % Assume 0 input for now until we get around to recording this
 
     %% Update Kalman Filter Using Both Camera and Encoder
     % Push current values onto end of queue
@@ -285,7 +288,3 @@ subplot(312), plot(time, [camera_Y(2,:); full_X_hat(2,:)]), xlabel('t [s]'), yla
 legend('Real', 'Estimated');
 subplot(313), plot(time, [camera_Y(3,:); full_X_hat(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
 legend('Real', 'Estimated');
-
-f = figure(6);
-f.Name =  'Full Camera Readings';
-plot(time, full_X_hat(4:end, :)), xlabel('t [s]'), ylabel('x(t) [m]');
