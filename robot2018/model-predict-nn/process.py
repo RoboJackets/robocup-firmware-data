@@ -4,143 +4,91 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from keras.models import Sequential
+from keras.layers import LSTM, Dense
+
 from matplotlib import pyplot as plt
 from matplotlib import animation
+
+verbose = False
+
+def log(*args, **kwargs):
+    if verbose:
+        print("".join(map(str,args)), **kwargs)
 
 data = pd.read_csv("../vision-enc-data/enc_vis.txt", sep=" ")
 data = data.drop("bot_id", axis=1)
 
 # header: bot_id x y ang enc0 enc1 enc2 enc3
 
+window_size = 3
 
-for index, row in data.iterrows():
-    break
-    #  plt.plot(row["x"], row["y"])
+x_data = []
+y_data = []
 
-#  plt.plot(data["x"], data["y"])
+# Data input to LSTM is 3d, need features * window_size * sample_count
+for i in range(0, len(data) - window_size - 1):
+    log("--------------------------------------------------------------------------------")
+    log("Processing row {}".format(i))
 
-#  plt.plot(data)
-#  plt.show()
+    # go from i-window_size to i
+    x = data.iloc[i:i+window_size]    
 
-#  print(data)
+    # grab only x, y, ang fields from the dataframe
+    y = np.split(data, [3], axis=1)[0].iloc[i+window_size]
 
-#  exit(0)
+    x_data.append(x)
+    y_data.append(y)
 
-fig = plt.figure()
-ax = plt.axes(xlim=(min(data['x']), max(data['x'])), ylim=(min(data['y']),max(data['y'])))
-#  ax = plt.axes(xlim=(0,2), ylim=(-2,2))
-line, = ax.plot([], [], lw=2)
+    log("X data")
+    log(x)
+    log("Y_data")
+    log(y)
+    log("--------------------------------------------------------------------------------")
+    log()
 
-def init():
-    line.set_data([], [])
-    return line,
+#  sec = data.iloc[0:0+window_size]
 
-def animate(i):
-    #  print(i)
-    #  row = data.iloc[i]
-    #  x = row['x']
-    #  y = row['y']
-    #  x = 1000*np.linspace(0, 2, 1000)
-    #  y = 1000*np.sin(2 * np.pi * (x - 0.01 * i))
-    st = 1000
-    x = data.iloc[st:st+i]['x']
-    y = data.iloc[st:st+i]['y']
-    #  print(x)
-    #  line.set_data(data.iloc[0:i]['x'], data.iloc[0:i]['y'])
-    line.set_data(x, y)
-    #  print(len(line.get_xdata()))
-    #  line.set_data(data['x'], data['y'])
-    return line,
+#  print(sec)
 
-print(len(data))
+#  dfs = np.split(sec, [3], axis=1)
 
-anim = animation.FuncAnimation(fig, animate, init_func=init,
-                               frames=len(data), interval=1000*1/60.0, blit=True)
+#  print(dfs[0])
+#  print(dfs[1])
 
-plt.show()
+#  for i in range(0, data_len - window_size):
+    #  data_section = data.iloc[i:i+window_size])
+    #  #  data_section_x = data
+    #  #  data_set.append(data.iloc[i:i+window_size])
 
+#  data_dim = 7
+#  timesteps = 10
+#  #  num_classes = 10
+#  batch_size = 32
 
-#  def get_income(one_hot, fill_nan, drop_cat):
-    #  income = pd.read_csv("income_dataset/train_students.txt",
-                          #  names=["Id", "age", "workclass", "fnlwgt", "education",
-                                #  "edu-num", "marital-status", "occupation",
-                                #  "relationship", "race", "sex", "capital-gain",
-                                #  "capital-loss", "hours-per-week", "native-country",
-                                #  "Prediction"],
-                          #  sep=" *, *",
-                          #  engine="python")
-    #  income = income.iloc[1:]
+#  # Expected input batch shape: (batch_size, timesteps, data_dim)
+#  # Note that we have to provide the full batch_input_shape since the network is stateful.
+#  # the sample of index i in batch k is the follow-up for the sample i in batch k-1.
+#  model = Sequential()
+#  model.add(LSTM(32, return_sequences=True, stateful=True,
+               #  batch_input_shape=(batch_size, timesteps, data_dim)))
+#  model.add(LSTM(32, return_sequences=True, stateful=True))
+#  model.add(LSTM(32, stateful=True))
+#  model.add(Dense(10, activation='softmax'))
 
-    #  # remove rows with missing data
-    #  income = income.applymap(lambda x: np.nan if x.strip() == "?" else x)
-    #  if not fill_nan:
-        #  income = income.dropna()
-    #  # education is already numerically encoded
-    #  income = income.drop("education", axis=1)
-    #  income = income.drop("Id", axis=1)
-    #  income = income.drop("fnlwgt", axis=1)
-    #  #income = income.drop("native-country", axis=1)
-    #  #income = income[["marital-status", "relationship","race","Prediction"]]
-    #  #income = income.drop("marital-status", axis=1)
-    #  #income = income.drop("relationship", axis=1)
+#  model.compile(loss='categorical_crossentropy',
+              #  optimizer='rmsprop',
+              #  metrics=['accuracy'])
 
-    #  str_cols = []
-    #  num_cols = []
-    #  for col_name in income.columns:
-        #  income[col_name] = pd.to_numeric(income[col_name], errors="ignore")
-        #  if (type(income[col_name].iloc[0]) is str):
-            #  str_cols.append(col_name)
-            #  if fill_nan:
-                #  income[col_name] = income[col_name].fillna(income[col_name].value_counts().idxmax())
-            #  if not one_hot:
-                #  income[col_name] = income[col_name].astype("category").cat.codes
-        #  else:
-            #  num_cols.append(col_name)
-            #  if fill_nan:
-                #  income[col_name] = income[col_name].fillna(income[col_name].mean())
+#  # Generate dummy training data
+#  #  x_train = np.random.random((batch_size * 10, timesteps, data_dim))
+#  #  y_train = np.random.random((batch_size * 10, num_classes))
 
-    #  y_name = "Prediction"
-    #  income_y = income[y_name]
-    #  income = income.drop(y_name, axis=1)
-    
-    #  if drop_cat:
-        #  print("killed: ", str_cols)
-        #  income_X = income.drop(str_cols, axis=1)
-    #  elif one_hot:
-        #  income_X = pd.get_dummies(income, columns=str_cols)
-    #  else:
-        #  income_X = income
+#  #  # Generate dummy validation data
+#  #  x_val = np.random.random((batch_size * 3, timesteps, data_dim))
+#  #  y_val = np.random.random((batch_size * 3, num_classes))
 
-    #  income_X -= income_X.min()
-    #  income_X /= income_X.max()
-    #  income_X = income_X * 2 - 1
+#  model.fit(x_train, y_train,
+          #  batch_size=batch_size, epochs=5, shuffle=False)
+          #  #  validation_data=(x_val, y_val))
 
-    #  # income data set, complete with data and labels in tuple
-    #  income = (income_X, income_y)
-    
-    #  return income
-
-#  def get_orig_income(index):
-    #  income = pd.read_csv("income_dataset/train_students.txt",
-                          #  names=["Id", "age", "workclass", "fnlwgt", "education",
-                                #  "edu-num", "marital-status", "occupation",
-                                #  "relationship", "race", "sex", "capital-gain",
-                                #  "capital-loss", "hours-per-week", "native-country",
-                                #  "Prediction"],
-                          #  sep=" *, *",
-                          #  engine="python")
-    #  income = income.iloc[1:]
-    #  return income.iloc[index]
-    
-#  def get_digits():
-    #  from sklearn import datasets
-
-    #  # Digits data set, complete with data and labels in tuple
-    #  digits_X, digits_y = datasets.load_digits(return_X_y=True)
-    #  digits_X -= digits_X.min()
-    #  digits_X /= digits_X.max()
-    #  digits_X = digits_X * 2 - 1
-
-    #  digits = (pd.DataFrame(digits_X), pd.Series(digits_y))
-    
-    #  return digits
