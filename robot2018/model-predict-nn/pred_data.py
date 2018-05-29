@@ -43,6 +43,16 @@ def nn_to_data(np_array):
 
     return df
 
+def get_data_2d(frame_delay=6, window_size=3):
+    (x_data, y_data) = get_data(frame_delay, window_size)
+
+    new_x_data = []
+
+    for input_list in x_data:
+        new_x_data.append(input_list.as_matrix().flatten())
+
+    return np.array(new_x_data), np.array(y_data)
+
 def get_data(frame_delay=6, window_size=3):
     data = pd.read_csv("../vision-enc-data/enc_vis.txt", sep=" ")
     # header: bot_id x y ang enc0 enc1 enc2 enc3
