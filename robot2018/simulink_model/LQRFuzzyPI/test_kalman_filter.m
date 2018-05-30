@@ -144,7 +144,7 @@ full_p_camera     = zeros( 11, 11 );            % Covariance at last camera upda
 camera_y          = start_pos;                  % Current camera reading of pos
 encoder_y         = zeros( 4, 1 );              % Current encoder reading of wheel vel
 
-camera_frame_delay = 5; % Number of frames the camera lags behind
+camera_frame_delay = 20; % Number of frames the camera lags behind
 encoder_buffer = zeros( 4, camera_frame_delay ); % Past encoder samples before current camera data comes in
 u_buffer       = zeros( 3, camera_frame_delay ); % Past wheel output before current camera data comes in
 heading_buffer = zeros( 1, camera_frame_delay ); % Past history of the angle
@@ -282,9 +282,9 @@ subplot(313), plot(time, camera_Y(3,:)), xlabel('t [s]'), ylabel('\theta(t) [rad
 
 f = figure(5);
 f.Name = 'Full Position Compared (Real Pos, Estimated, Target)';
-subplot(311), plot(time, [camera_Y(1,:); full_X_hat(1,:)]), xlabel('t [s]'), ylabel('x(t) [m]');
+subplot(311), plot(time*1000, [camera_Y(1,:); full_X_hat(1,:)]), xlabel('t [s]'), ylabel('x(t) [m]');
 legend('Real', 'Estimated');
-subplot(312), plot(time, [camera_Y(2,:); full_X_hat(2,:)]), xlabel('t [s]'), ylabel('y(t) [m]');
+subplot(312), plot(time*1000, [camera_Y(2,:); full_X_hat(2,:)]), xlabel('t [s]'), ylabel('y(t) [m]');
 legend('Real', 'Estimated');
-subplot(313), plot(time, [camera_Y(3,:); full_X_hat(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
+subplot(313), plot(time*1000, [camera_Y(3,:); full_X_hat(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
 legend('Real', 'Estimated');
