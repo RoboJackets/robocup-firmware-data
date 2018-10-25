@@ -58,7 +58,7 @@ V = (c_m + (c_L/(n^2)))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*M*diff(gbR, phi_sym
 S = (Rt/k_m)*Z;
 T = (Rt/k_m)*V + EM*eye(4);
 
-BotToWheel = G' / r / n;
+BotToWheel = G' / r;
 WheelToBot = pinv(BotToWheel);
 
 %% State Space Modeling

@@ -11,6 +11,7 @@ data = dlmread('../../vision-enc-data/enc_vis.txt', ' ', 2, 0);
 data_bot_id = data(:, 1);
 data_camera_pos = data(:, 2:4);
 data_camera_pos(:, 1:2) = data_camera_pos(:, 1:2) / 1000;  % Convert to meters
+data_camera_pos(:, 3) = data_camera_pos(:, 3) - pi/2;
 data_encoder_output = data(:, 5:8) * 2*pi / t_soccer_period / (2048 * 3); % Convert from lsb/ts in hz to rad/s
 
 
@@ -19,7 +20,7 @@ time = (0:length(data_bot_id)-1) * t_soccer_period;
 
 
 %% Robot Constants
-thetas = [180 - 30, 180 + 39, 0 - 39, 0 + 30]*pi/180.0 - pi/2;
+thetas = [180 - 30, 180 + 39, 360 - 39, 0 + 30]*pi/180.0;
 L = 0.0798576;
 J_L = 2.158e-5;
 J_m = 1.35e-5;
@@ -58,7 +59,7 @@ V = (c_m + (c_L/(n^2)))*eye(4) + ((r^2)/(n^2))*pinv(G)*gbR.'*M*diff(gbR, phi_sym
 S = (Rt/k_m)*Z;
 T = (Rt/k_m)*V + EM*eye(4);
 
-BotToWheel = -1 .* G' / r;
+BotToWheel = -1 * G' / r;
 WheelToBot = pinv(BotToWheel);
 
 %% State Space Modeling
@@ -70,46 +71,38 @@ B = double(subs(B_sym, phi_sym, 0));
 C = eye(4,4);
 D = zeros(4,4);
 
-%% State Space Integral Gains
-% Q/R for the integral state space
-Q_int = [  eye(4,4)/10^2,     zeros(4,4);
-              zeros(4,4), eye(4,4)*10^2];
-R_int = eye(4,4)*5;
+%% State Feedback Gains
+% Q/R for just simple state feedback (-Kx)
+Q_fb = eye(4,4);
+R_fb = eye(4,4)*2;
 
 robot_ss = ss(A, B, C, D);
-[K_int, ~, e_int] = lqi(robot_ss, Q_int, R_int);
-
-%% Full State Space Modelling
-% This is from the point of view of soccer viewing the robot as the plant
-K2 = K_int(:, 5:8)*0;
-K1 = K_int(:, 1:4)*0;
+[K_fb, ~, e_fb] = lqr(robot_ss, Q_fb, R_fb);
 
 % See word doc for this
 % The rotation can be taken out and applied after the fact
 % This is so we don't have to descretize a highly nonlinear system
-Ao = [zeros(3,3), WheelToBot, zeros(3,4);
-      zeros(4,3),     A-B*K1,      -B*K2;
-      zeros(4,3),          C, zeros(4,4)];
+Ao = [zeros(3,3), WheelToBot;
+      zeros(4,3),     A-B*K_fb];
 
 % Noise matrices (Unused)
 E2 = zeros(3,3);
 E1 = zeros(4,4);
 
-Bo = [        E2, zeros(3,4), zeros(3,4);
-      zeros(4,3), zeros(4,4),         E1;
-      zeros(4,3),  -eye(4,4), zeros(4,4)];
+Bo = [        E2, zeros(3,4);
+      zeros(4,3), K_fb];
   
 % The Output matrices must be considered for multiple variations with
 % different outputs
 %   1. Both Encoders and Camera (For when we have data from both for a
 %   single time step
 %   2. Encoders (For when we only have the encoder data)
-Co_both = [  eye(3,3), zeros(3,4), zeros(3,4);
-           zeros(4,3),          C, zeros(4,4)];
-Co_enco = [zeros(4,3),          C, zeros(4,4)];
+Co_both = [  eye(3,3), zeros(3,4);
+           zeros(4,3),          C];
+Co_enco = [zeros(4,3),          C];
        
-Do_both = zeros(7,11);
-Do_enco = zeros(4,11);
+Do_both = zeros(7,7);
+Do_enco = zeros(4,7);
 
 full_ss_both = ss(Ao, Bo, Co_both, Do_both);
 full_ss_enco = ss(Ao, Bo, Co_enco, Do_enco);
@@ -121,45 +114,47 @@ dfull_ss_enco = c2d(full_ss_enco, t_soccer_period);
 % without due to the split kalman filter needed for both camera and encoder
 % output and just encoder output
 F_k = dfull_ss_both.A; % A
+F_k(1:3, 4:end) = t_soccer_period * Ao(1:3, 4:end);
 B_k = dfull_ss_both.B; % B
 H_k_both = dfull_ss_both.C; % C
 H_k_enco = dfull_ss_enco.C;
-Q_k = eye(11, 11); % Covariance of process noise
-R_k_both = [eye(3, 3)*sqrt(.001), zeros(3, 4);
-            zeros(4,3), eye(4, 4)*.0001]; % Variance of observation noise
-R_k_enco = eye(4, 4)*.0001;
+Q_k = [[.01, 0, 0; 0, .01, 0; 0, 0, 100], zeros(3,4);
+       zeros(4,3),   eye(4,4).*100];% Covariance of process noise
+R_k_both = [eye(3, 3)*sqrt(.1), zeros(3, 4);
+            zeros(4,3), eye(4, 4)*.00001]; % Variance of observation noise
+R_k_enco = eye(4, 4)*.00001;
 
 % Position controller
-full_X_hat   = zeros( 11, length(data_bot_id) ); % Estimated state vector
+full_X_hat   = zeros( 7, length(data_bot_id) ); % Estimated state vector
 camera_Y     = zeros( 3, length(data_bot_id) );  % Camera output
 encoder_Y    = zeros( 4, length(data_bot_id) );  % Encoder output
 
 %% Initial Conditions
 start_pos = data_camera_pos(1, :)';
 
-full_x_hat        = [start_pos; zeros( 8, 1 )]; % Current position estimate
-full_p            = zeros( 11, 11 );            % Current covariance estimate
-full_x_hat_camera = [start_pos; zeros( 8, 1 )]; % Estimated pos at last camera update
-full_p_camera     = zeros( 11, 11 );            % Covariance at last camera update
+full_x_hat        = [start_pos; zeros( 4, 1 )]; % Current position estimate
+full_p            = zeros( 7, 7 );            % Current covariance estimate
+full_x_hat_camera = [start_pos; zeros( 4, 1 )]; % Estimated pos at last camera update
+full_p_camera     = zeros( 7, 7 );            % Covariance at last camera update
 camera_y          = start_pos;                  % Current camera reading of pos
 encoder_y         = zeros( 4, 1 );              % Current encoder reading of wheel vel
 
-camera_frame_delay = 5; % Number of frames the camera lags behind
+camera_frame_delay = 10; % Number of frames the camera lags behind
 encoder_buffer = zeros( 4, camera_frame_delay ); % Past encoder samples before current camera data comes in
 u_buffer       = zeros( 3, camera_frame_delay ); % Past wheel output before current camera data comes in
 heading_buffer = zeros( 1, camera_frame_delay ); % Past history of the angle
 
 
 for t = 0:length(data_bot_id)-1	
-    rotation_hat = [cos(full_x_hat(3)), -sin(full_x_hat(3)), 0;
-                    sin(full_x_hat(3)),  cos(full_x_hat(3)), 0;
+    rotation_hat = [cos(data_camera_pos(t+1,3)), -sin(data_camera_pos(t+1,3)), 0;
+                    sin(data_camera_pos(t+1,3)),  cos(data_camera_pos(t+1,3)), 0;
                                      0,                   0, 1];
     
     % Soccer controller update
     %% Get sensor output
     camera_y    = data_camera_pos(t + 1, :)';
     encoder_y   = data_encoder_output(t + 1, :)';
-    commanded_u = rotation_hat * WheelToBot * encoder_y; % Assume 0 input for now until we get around to recording this
+    commanded_u = zeros(3,1);%rotation_hat * WheelToBot * encoder_y; % Try and guess input from current encoder values
 
     %% Update Kalman Filter Using Both Camera and Encoder
     % Push current values onto end of queue
@@ -184,13 +179,13 @@ for t = 0:length(data_bot_id)-1
     p_k1_k1     = full_p_camera;
 
     % Robot input
-    full_u_kalman = [zeros(3,1); BotToWheel*u_cur; zeros(4, 1)];
+    full_u_kalman = [zeros(3,1); BotToWheel*u_cur];
 
     % Rotate the part of the A matrix that corresponds with the
     % wheel -> body velocity leaving the integration
     F_k_rot = F_k;
-    rot = [cos(heading_cur), -sin(heading_cur), 0;
-           sin(heading_cur),  cos(heading_cur), 0;
+    rot = [cos(data_camera_pos(t+1,3)), -sin(data_camera_pos(t+1,3)), 0;
+           sin(data_camera_pos(t+1,3)),  cos(data_camera_pos(t+1,3)), 0;
                           0,                 0, 1];
     F_k_rot(1:3, 4:end) = rot'*F_k(1:3, 4:end); % Need history of angle
 
@@ -209,9 +204,10 @@ for t = 0:length(data_bot_id)-1
     x_hat_k_k = x_hat_k_k1 + K_k*y_tilda_k;
 
     % Calculate the new output and the new covariance
-    P_k_k = (eye(11) - K_k * H_k_both) * P_k_k1 * (eye(11) - K_k * H_k_both)' + K_k * R_k_both * K_k';
+    P_k_k = (eye(7) - K_k * H_k_both) * P_k_k1 * (eye(7) - K_k * H_k_both)' + K_k * R_k_both * K_k';
     y_tilda_k_k = z_k - H_k_both * x_hat_k_k; % (Output is never actually used)
 
+    x_hat_k_k(4:7) = encoder_y;
     full_x_hat = x_hat_k_k;
     full_p = P_k_k;
 
@@ -225,7 +221,7 @@ for t = 0:length(data_bot_id)-1
         z_k = encoder_buffer(:, i);
 
         % Robot Input
-        full_u_kalman = [zeros(3,1); BotToWheel*u_buffer(:, i); zeros(4, 1)];
+        full_u_kalman = [zeros(3,1); BotToWheel*u_buffer(:, i)];
 
         x_hat_k1_k1 = full_x_hat;
         P_k1_k1 = full_p;
@@ -233,8 +229,8 @@ for t = 0:length(data_bot_id)-1
         % Rotate the part of the A matrix that corresponds with the
         % wheel -> body velocity leaving the integration
         F_k_rot = F_k;
-        rot = [cos(heading_buffer(i)), -sin(heading_buffer(i)), 0;
-               sin(heading_buffer(i)),  cos(heading_buffer(i)), 0;
+        rot = [cos(data_camera_pos(t+1,3)), -sin(data_camera_pos(t+1,3)), 0;
+               sin(data_camera_pos(t+1,3)),  cos(data_camera_pos(t+1,3)), 0;
                                     0,                       0, 1];
         F_k_rot(1:3, 4:end) = rot'*F_k(1:3, 4:end); % Need history of angle
 
@@ -253,9 +249,10 @@ for t = 0:length(data_bot_id)-1
         x_hat_k_k = x_hat_k_k1 + K_k*y_tilda_k;
 
         % Calculate the new output and the new covariance
-        P_k_k = (eye(11) - K_k * H_k_enco) * P_k_k1 * (eye(11) - K_k * H_k_enco)' + K_k * R_k_enco * K_k';
+        P_k_k = (eye(7) - K_k * H_k_enco) * P_k_k1 * (eye(7) - K_k * H_k_enco)' + K_k * R_k_enco * K_k';
         y_tilda_k_k = z_k - H_k_enco * x_hat_k_k; % (Output is never actually used)
 
+        x_hat_k_k(4:7) = encoder_y;
         full_x_hat = x_hat_k_k;
         full_p = P_k_k;
     end
@@ -265,6 +262,44 @@ for t = 0:length(data_bot_id)-1
     full_X_hat(:, t+1)   = full_x_hat; % Estimated state vector
     camera_Y(:, t+1)     = camera_y;  % Camera output
     encoder_Y(:, t+1)    = encoder_y;  % Encoder output
+end
+
+enco_esti = zeros( 3, length(data_bot_id));
+enco_esti2 = enco_esti;
+enco_esti3 = enco_esti;
+enco_esti4 = enco_esti;
+cur_est = [start_pos; 0;0;0;0];
+cur_est2 = cur_est(1:3);
+cur_est3 = cur_est;
+cur_est4 = cur_est(1:3);
+for n = 1:length(data_bot_id)
+    cur_est(3) = camera_Y(3, n);
+    rotation_hat = [cos(cur_est(3)), -sin(cur_est(3)), 0;
+                    sin(cur_est(3)),  cos(cur_est(3)), 0;
+                                  0,                0, 1];
+                              
+    Ao_rot = Ao;
+    Ao_rot(1:3, 4:end) = rotation_hat*Ao_rot(1:3, 4:end);
+    cur_est2 = cur_est2(1:3) + 1/60* rotation_hat * WheelToBot * encoder_Y(:, n);
+    
+    Aor = [zeros(3,3), rotation_hat*WheelToBot;
+          zeros(4,3),     A-B*K_fb];
+    full_ss_both = ss(Aor, Bo, Co_both, Do_both);
+    dfull_ss_both = c2d(full_ss_both, t_soccer_period);
+    cur_est3 = dfull_ss_both.A * [cur_est3(1:3); encoder_Y(:, n)];
+    
+    cur_est = cur_est + t_soccer_period * full_ss_both.A * [cur_est(1:3); encoder_Y(:, n)];
+    
+    cur_est4 = camera_Y(1:3, n);
+    for i = max(1, n - camera_frame_delay):n
+        cur_est4 = cur_est4 + t_soccer_period * rotation_hat * WheelToBot * encoder_Y(:, i);
+    end
+    
+    cur_est(3) = wrapToPi(cur_est(3) + pi/2) - pi/2;
+    enco_esti(:, n) = cur_est(1:3);
+    enco_esti2(:, n) = cur_est2(1:3);
+    enco_esti3(:, n) = cur_est3(1:3);
+    enco_esti4(:, n) = cur_est4(1:3);
 end
 
 f = figure(3);
@@ -282,9 +317,9 @@ subplot(313), plot(time, camera_Y(3,:)), xlabel('t [s]'), ylabel('\theta(t) [rad
 
 f = figure(5);
 f.Name = 'Full Position Compared (Real Pos, Estimated, Target)';
-subplot(311), plot(time, [camera_Y(1,:); full_X_hat(1,:)]), xlabel('t [s]'), ylabel('x(t) [m]');
-legend('Real', 'Estimated');
-subplot(312), plot(time, [camera_Y(2,:); full_X_hat(2,:)]), xlabel('t [s]'), ylabel('y(t) [m]');
-legend('Real', 'Estimated');
-subplot(313), plot(time, [camera_Y(3,:); full_X_hat(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
-legend('Real', 'Estimated');
+subplot(311), plot(time, [camera_Y(1,:); full_X_hat(1,:); enco_esti(1,:); enco_esti2(1,:); enco_esti3(1,:); enco_esti4(1,:)]), xlabel('t [s]'), ylabel('x(t) [m]');
+legend('Real', 'Kalaman', 'Cont A', 'Raw Cont', 'Disc A', 'Enco Last N');
+subplot(312), plot(time, [camera_Y(2,:); full_X_hat(2,:); enco_esti(2,:); enco_esti2(2,:); enco_esti3(2,:); enco_esti4(2,:)]), xlabel('t [s]'), ylabel('y(t) [m]');
+legend('Real', 'Kalaman', 'Cont A', 'Raw Cont', 'Disc A', 'Enco Last N');
+subplot(313), plot(time, [camera_Y(3,:); full_X_hat(3,:); enco_esti(3,:); enco_esti2(3,:); enco_esti3(3,:); enco_esti4(3,:)]), xlabel('t [s]'), ylabel('\theta(t) [rad]');
+legend('Real', 'Kalaman', 'Cont A', 'Raw Cont', 'Disc A', 'Enco Last N');
