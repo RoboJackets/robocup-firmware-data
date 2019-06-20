@@ -50,3 +50,15 @@ w34
 | 3            |               | 0.2           | 0.01       |       |
 | 3            | 0.01          | 0.4           |            |       |
 | 3            |               |               | 0.001      | Gonna stick with these gains |
+
+# XYEST Data Files
+
+`xyest_#` files are the xy estimation compared to the encoder estimates. All units in m/s
+
+## Column Descriptions
+| X Raw | Y Raw | X Filtered | Y Filtered |
+| ----- | ----- | ---------- | ---------- |
+
+| XYEST Trail # | Process Noise | Encoder Noise | Gyro Noise |
+| ------------- | ------------- | ------------- | ---------- |
+| 1             | 0.01          | 0.4           | 0.001      |
