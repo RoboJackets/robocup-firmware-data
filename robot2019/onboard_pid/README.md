@@ -16,6 +16,7 @@ w12
 | ---------------------- | ---------------------- | ---------------------- | ---------------------- |
 
 w34
+
 | Wheel 3 actual (rad/s) | Wheel 4 actual (rad/s) | Wheel 3 target (rad/s) | Wheel 4 target (rad/s) |
 | ---------------------- | ---------------------- | ---------------------- | ---------------------- |
 
@@ -32,8 +33,7 @@ w34
 | Measured axis 1 | Measured axis 2 | Target axis 1 | Target axis 2 |
 | --------------- | --------------- | ------------- | ------------- |
 
-
-
+Best gain looks like 1, 1.5, 1
 
 # WEST Data Files
 
@@ -48,17 +48,17 @@ w34
 | 1            | 0.1           | 0.1           | 0.1        | Gyro Sensitivity at 250 deg/s. Bumped up to 1000 for next run |
 | 2            |               |               |            | 1000 deg/s |
 | 3            |               | 0.2           | 0.01       |       |
-| 3            | 0.01          | 0.4           |            |       |
-| 3            |               |               | 0.001      | Gonna stick with these gains |
+| 4            | 0.01          | 0.4           |            |       |
+| 5            |               |               | 0.001      | Gonna stick with these gains |
 
 # XYEST Data Files
 
-`xyest_#` files are the xy estimation compared to the encoder estimates. All units in m/s
+`xyest_#` files are the xy estimation compared to the encoder estimates. All units in m/s. Corresponds to a matching gain in the west trial.
 
 ## Column Descriptions
 | X Raw | Y Raw | X Filtered | Y Filtered |
 | ----- | ----- | ---------- | ---------- |
 
-| XYEST Trail # | Process Noise | Encoder Noise | Gyro Noise |
-| ------------- | ------------- | ------------- | ---------- |
-| 1             | 0.01          | 0.4           | 0.001      |
+| XYEST Trail # | Process Noise | Encoder Noise | Gyro Noise | Corresponding WEST Trail # |
+| ------------- | ------------- | ------------- | ---------- | -------------------------- |
+| 1             | 0.01          | 0.4           | 0.001      | 5                          |
