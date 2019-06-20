@@ -62,3 +62,12 @@ Best gain looks like 1, 1.5, 1
 | XYEST Trail # | Process Noise | Encoder Noise | Gyro Noise | Corresponding WEST Trail # |
 | ------------- | ------------- | ------------- | ---------- | -------------------------- |
 | 1             | 0.01          | 0.4           | 0.001      | 5                          |
+
+# Strafe Data Files
+
+There's some weird things with left right movement creating disturbances in the forward backwards axis. These are specific data files pertaining to that movement.
+
+## Column Descriptions
+
+| Measured X | Measured Y | Target X | Target Y |
+| --------------- | --------------- | ------------- | ------------- |
