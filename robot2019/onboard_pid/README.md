@@ -25,7 +25,7 @@ w34
 
 # SPPV Data Files
 
-`sppv_AA_B_C_D` files are the setpoint process variables for `AA` axis, with gains `B` on the X axis, `C` on the Y axis, and `D` on the W axis. XY axis are m/s and W is in rad/s.
+`sppv_AA_B_C_D_F` files are the setpoint process variables for `AA` axis, with gains `B` on the X axis, `C` on the Y axis, and `D` on the W axis. XY axis are m/s and W is in rad/s. `F` is the WEST Trial # gains which this corresponds to.
 
 ## Column Description
 
@@ -33,3 +33,20 @@ w34
 | --------------- | --------------- | ------------- | ------------- |
 
 
+
+
+# WEST Data Files
+
+`west_#` files are the omega estimation comparison between the gyro and encoders. All units in rad/s. In a non slip world, they should match.
+
+## Column Descriptions
+| Gyro Raw | Encoder Raw | Filtered |
+| -------- | ----------- | -------- |
+
+| WEST Trial # | Process Noise | Encoder Noise | Gyro Noise | Notes |
+| ------------ | ------------- | ------------- | ---------- | ----- |
+| 1            | 0.1           | 0.1           | 0.1        | Gyro Sensitivity at 250 deg/s. Bumped up to 1000 for next run |
+| 2            |               |               |            | 1000 deg/s |
+| 3            |               | 0.2           | 0.01       |       |
+| 3            | 0.01          | 0.4           |            |       |
+| 3            |               |               | 0.001      | Gonna stick with these gains |
