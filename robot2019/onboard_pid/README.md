@@ -1,6 +1,18 @@
 Note: Only 4 numbers can be recorded wirelessly at once so each batch is done in sets of 2
 where the gains are the same, but the actual commands will be different
 
+# Estimator Gains Table
+
+| Gain # | Process Noise | Encoder Noise | Gyro Noise | Notes |
+| ------ | ------------- | ------------- | ---------- | ----- |
+| 1      | 0.1           | 0.1           | 0.1        | Gyro Sensitivity at 250 deg/s. Bumped up to 1000 for next run |
+| 2      |               |               |            | 1000 deg/s |
+| 3      |               | 0.2           | 0.01       |       |
+| 4      | 0.01          | 0.4           |            |       |
+| 5      |               |               | 0.001      |       |
+| 6      |               |               |            | 200 hz update rate |
+| 7      | 0.001         | 0.4           | 0.001      |       |
+
 # WS Data Files
 
 `*_ws_#` files are the output files for the wheel speed to duty cycle gain trails. This is specificlaly to tune the rad/s target -> duty cycle gain for the wheels in general. In a perfect world, during steady state, they should match.
@@ -26,7 +38,7 @@ w34
 
 # SPPV Data Files
 
-`sppv_AA_B_C_D_F` files are the setpoint process variables for `AA` axis, with gains `B` on the X axis, `C` on the Y axis, and `D` on the W axis. XY axis are m/s and W is in rad/s. `F` is the WEST Trial # gains which this corresponds to.
+`sppv_AA_B_C_D_F` files are the setpoint process variables for `AA` axis, with gains `B` on the X axis, `C` on the Y axis, and `D` on the W axis. XY axis are m/s and W is in rad/s. `F` is the estimator gain # which this corresponds to.
 
 ## Column Description
 
@@ -37,23 +49,15 @@ Best gain looks like 1, 1.5, 1
 
 # WEST Data Files
 
-`west_#` files are the omega estimation comparison between the gyro and encoders. All units in rad/s. In a non slip world, they should match.
+`west_#` files are the omega estimation comparison between the gyro and encoders for gain # in the estimator gain table. Not every entry exists All units in rad/s. In a non slip world, they should match.
 
 ## Column Descriptions
 | Gyro Raw | Encoder Raw | Filtered |
 | -------- | ----------- | -------- |
 
-| WEST Trial # | Process Noise | Encoder Noise | Gyro Noise | Notes |
-| ------------ | ------------- | ------------- | ---------- | ----- |
-| 1            | 0.1           | 0.1           | 0.1        | Gyro Sensitivity at 250 deg/s. Bumped up to 1000 for next run |
-| 2            |               |               |            | 1000 deg/s |
-| 3            |               | 0.2           | 0.01       |       |
-| 4            | 0.01          | 0.4           |            |       |
-| 5            |               |               | 0.001      | Gonna stick with these gains |
-
 # XYEST Data Files
 
-`xyest_#` files are the xy estimation compared to the encoder estimates. All units in m/s. Corresponds to a matching gain in the west trial.
+`xyest_#` files are the xy estimation compared to the encoder estimates. All units in m/s. Corresponds to a matching gain # in the estimator gain table.
 
 ## Column Descriptions
 | X Raw | Y Raw | X Filtered | Y Filtered |
@@ -70,4 +74,25 @@ There's some weird things with left right movement creating disturbances in the 
 ## Column Descriptions
 
 | Measured X | Measured Y | Target X | Target Y |
-| --------------- | --------------- | ------------- | ------------- |
+| ---------- | ---------- | -------- | -------- |
+
+# W Data Files
+
+`w_#` files are the raw commands in terms of `10*% max speed` for the wheels for trial `#`.
+
+## Column Descriptions
+| Wheel 1 | Wheel 2 | Wheel 3 | Wheel 4 |
+| ------- | ------- | ------- | ------- |
+
+| W Trail # | Notes |
+| --------- | ----- |
+| 1         | 1.5_2_1.5_6 |
+| 2         | 0_0_0_6 |
+
+# EST Data Files
+
+`est_A_#` files are the filtered estimate of position in `m/s` and `rad/s` for trial `#` with estimation gain number `A`.
+
+## Column Description
+| X | Y | W |
+| - | - | - |
