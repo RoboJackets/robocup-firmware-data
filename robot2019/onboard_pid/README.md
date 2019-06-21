@@ -12,6 +12,10 @@ where the gains are the same, but the actual commands will be different
 | 5      |               |               | 0.001      |       |
 | 6      |               |               |            | 200 hz update rate |
 | 7      | 0.001         | 0.4           | 0.001      |       |
+| 8      | 0.0001        |               |            |       |
+| 9      |               | 4             | 0.01       |       |
+| 10     |               |               | 1          |       |
+| 11     |               |               | 0.1        |       |
 
 # WS Data Files
 
@@ -45,7 +49,13 @@ w34
 | Measured axis 1 | Measured axis 2 | Target axis 1 | Target axis 2 |
 | --------------- | --------------- | ------------- | ------------- |
 
-Best gain looks like 1, 1.5, 1
+
+| Run | Notes |
+| --- | ----- |
+| 1.5_2_1.5_7_1 | On block, limit .1 on all axis |
+| 1.5_2_1.5_7_2 | On field |
+| 1.5_2_1.5_7_3 | On field, limit .3, .2, .1 |
+| 1.5_2_1.5_7_4 | All previous ones were busted. Gains of .02,.02,0, and limit of .5 on every axis |
 
 # WEST Data Files
 
