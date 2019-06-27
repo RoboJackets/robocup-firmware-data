@@ -109,6 +109,8 @@ There's some weird things with left right movement creating disturbances in the 
 
 # ALL Data files
 
+Scale factor of 1/10 on all values. So the ones in the the csv are multiplied by 10 to get the true value
+
 ## Column Description
 | Wheel 1 Current | Wheel 2 Current | -Wheel 3 Current | -Wheel 4 Current | Wheel 1 Target | Wheel 2 Target | -Wheel 3 Target | -Wheel 4 Target | Body X vel current | Body Y vel current | Body W vel current | Body X vel target | Body Y vel target | Body W vel target |
 | --------------- | --------------- | ---------------- | ---------------- | -------------- | -------------- | --------------- | --------------- |  -------------- | -------------- | -------------- | -------------- | -------------- | -------------- |
@@ -125,4 +127,5 @@ There's some weird things with left right movement creating disturbances in the 
 | 8       | Tape, BodyKp = .5, WheelKp = 1.5 |
 | 9       | Tape, bodykp = .1 |
 | 10      | Ground, bodykp = 0|
-
+| 11      | Both, wheel accel = 30 |
+| 12      | Both, wheel acccel = 60 |
