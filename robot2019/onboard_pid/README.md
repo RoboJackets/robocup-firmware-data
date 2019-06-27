@@ -19,7 +19,7 @@ where the gains are the same, but the actual commands will be different
 
 # WS Data Files
 
-`*_ws_#` files are the output files for the wheel speed to duty cycle gain trails. This is specificlaly to tune the rad/s target -> duty cycle gain for the wheels in general. In a perfect world, during steady state, they should match.
+`*_ws_#` files are the output files for the wheel speed to duty cycle gain Trials. This is specificlaly to tune the rad/s target -> duty cycle gain for the wheels in general. In a perfect world, during steady state, they should match.
 
 
 `w12` means it's wheel 1 and 2, `w34` means it's wheel 3 and 4. These are fixed width.
@@ -73,7 +73,7 @@ w34
 | X Raw | Y Raw | X Filtered | Y Filtered |
 | ----- | ----- | ---------- | ---------- |
 
-| XYEST Trail # | Process Noise | Encoder Noise | Gyro Noise | Corresponding WEST Trail # |
+| XYEST Trial # | Process Noise | Encoder Noise | Gyro Noise | Corresponding WEST Trial # |
 | ------------- | ------------- | ------------- | ---------- | -------------------------- |
 | 1             | 0.01          | 0.4           | 0.001      | 5                          |
 
@@ -94,7 +94,7 @@ There's some weird things with left right movement creating disturbances in the 
 | Wheel 1 | Wheel 2 | Wheel 3 | Wheel 4 |
 | ------- | ------- | ------- | ------- |
 
-| W Trail # | Notes |
+| W Trial # | Notes |
 | --------- | ----- |
 | 1         | 1.5_2_1.5_6 |
 | 2         | 0_0_0_6 |
@@ -112,3 +112,17 @@ There's some weird things with left right movement creating disturbances in the 
 ## Column Description
 | Wheel 1 Current | Wheel 2 Current | -Wheel 3 Current | -Wheel 4 Current | Wheel 1 Target | Wheel 2 Target | -Wheel 3 Target | -Wheel 4 Target | Body X vel current | Body Y vel current | Body W vel current | Body X vel target | Body Y vel target | Body W vel target |
 | --------------- | --------------- | ---------------- | ---------------- | -------------- | -------------- | --------------- | --------------- |  -------------- | -------------- | -------------- | -------------- | -------------- | -------------- |
+
+| Trial # | Notes |
+| ------- | ----- |
+| 1       | Standard wheel open loop |
+| 2       | Inverted wheels 3 and 4 |
+| 3       | Turned off body vel, wheel gains, kp = 1, ki = 0, on tape |
+| 4       | On ground, same gains |
+| 5       | Tape, kp = 2 |
+| 6       | Ground |
+| 7       | Ground, kp = 1.5 |
+| 8       | Tape, BodyKp = .5, WheelKp = 1.5 |
+| 9       | Tape, bodykp = .1 |
+| 10      | Ground |
+
