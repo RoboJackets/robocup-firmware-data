@@ -124,5 +124,5 @@ There's some weird things with left right movement creating disturbances in the 
 | 7       | Ground, kp = 1.5 |
 | 8       | Tape, BodyKp = .5, WheelKp = 1.5 |
 | 9       | Tape, bodykp = .1 |
-| 10      | Ground |
+| 10      | Ground, bodykp = 0|
 
